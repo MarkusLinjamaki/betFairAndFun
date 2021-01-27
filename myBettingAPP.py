@@ -13,10 +13,9 @@ urlExchange = "https://api.betfair.com/exchange/betting/json-rpc/v1"
 urlAccount = "https://api.betfair.com/exchange/account/json-rpc/v1"
 
 # need appkey and session token to use Api
-#appKey = input("Enter your Application key ")
-#sessionToken = input("Enter your session Token/SSOID :")
-appKey =  "JKsdHhBNKG9skkxH"
-sessionToken = "sLWX+VNJeGjVUjhwQzTkxg9iVmNdtOQXaCZTxZxJSmg="
+appKey = input("Enter your Application key ")
+sessionToken = input("Enter your session Token/SSOID :")
+
 
 # Request Header, must contain X-Application, X-Authentication and content type
 headers = {'X-Application': appKey, 'X-Authentication': sessionToken, 'content-type': 'application/json'}
@@ -55,25 +54,29 @@ def eventPrinter(compId):
     r = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listEvents", "params": {"filter":{ "competitionIds" : [' + compId + ']  }}, "id": 1}'
     json_dat = apiCall(r,urlExchange)
     result = json_dat['result']
-    print(result)
-    #for event in result:
-    #    print(event['event']['name'] + " " + event['event']['id'])
+    for event in result:
+       print(event['event']['name'] + " " + event['event']['id'])
 
-
-def printOdds(eventId):
-    now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
-    r = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventIds" : [' + eventId + ']},"maxResults":"1"}, "id": 1}'
+def getMarketData(eventId):
+    r = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventIds" : [' + eventId + '],"marketTypeCodes" : ["MATCH_ODDS"]},"marketProjection" :["RUNNER_METADATA"], "maxResults":"1"}, "id": 1}'
     json_dat = apiCall(r,urlExchange)
-    result = json_dat['result']
-    for res in result:
-        print(res['marketName'])
-        r = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketBook", "params":{"marketIds" : [1.178086995]}}, "id": 1}'
-        json_dat1 = apiCall(r,urlExchange)
-        res = json_dat1['result']
-        print(res)
-        
-        
-    
+    market = json_dat['result']
+    return market
+
+def getMarketID(marketResults):
+    for market in marketResults:
+        return market['marketId']
+
+def getRunnerIDs(marketResults):
+    IDs = []
+    ind = 0
+    for market in marketResults:
+        IDs.append(market['runners'][0]['selectionId'])
+    for market in marketResults:
+        IDs.append(market['runners'][1]['selectionId'])
+    for market in marketResults:
+        IDs.append(market['runners'][2]['selectionId'])
+    return IDs
 
 
 def accountFunds():
@@ -98,9 +101,10 @@ def start():
             eventPrinter(competitionNumber)
         if choose == 4:
             eventId = input("Please give a eventId \n")
-            printOdds(eventId)
+            
 
+market_data = getMarketData("30244620")
+getMarketID(market_data)
 
-printOdds("30244620")
 
 
