@@ -13,8 +13,10 @@ urlExchange = "https://api.betfair.com/exchange/betting/json-rpc/v1"
 urlAccount = "https://api.betfair.com/exchange/account/json-rpc/v1"
 
 # need appkey and session token to use Api
-appKey = input("Enter your Application key ")
-sessionToken = input("Enter your session Token/SSOID :")
+#appKey = input("Enter your Application key ")
+#sessionToken = input("Enter your session Token/SSOID :")
+appKey = "JKsdHhBNKG9skkxH"
+sessionToken = "q/PltFb5dJCB3iHh6hQ+wskPUi8eV5N8lbnWRQVBnuk="
 
 # Request Header, must contain X-Application, X-Authentication and content type
 headers = {'X-Application': appKey, 'X-Authentication': sessionToken, 'content-type': 'application/json'}
@@ -78,7 +80,13 @@ def getEventData(competitionId):
 
 def eventPrinter(eventData):
     for event in eventData:
-       print(event['event']['name'])
+        print(event['event']['name'])
+
+def matchPrinter(eventData,id):
+    for event in eventData:
+        if(event['event']['id'] == str(id)):
+            print(event['event']['name'])
+
 
 def getEventId(eventName, eventData):
     for event in eventData:
@@ -87,19 +95,23 @@ def getEventId(eventName, eventData):
     return None
 
 
+
 def printOddsTypes(marketData):
     print(marketData)
 
 def getMarketData(eventId, oddsType):
-    print(oddsType)
-    r = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventIds" : [' + eventId + '],"marketTypeCodes" : ["' + oddsType + '"]},"marketProjection" :["RUNNER_METADATA"], "maxResults":"1"}, "id": 1}'
+    r = '{"jsonrpc": "2.0", "method": "SportsAPING/v1.0/listMarketCatalogue", "params": {"filter":{"eventIds" : [' + eventId + '],"marketTypeCodes" : ["' + oddsType + '"]},"marketProjection" :["RUNNER_METADATA"], "maxResults":"5"}, "id": 1}'
     json_dat = apiCall(r,urlExchange)
     market = json_dat['result']
     return market
 
 
 def getOddsData(marketId):
-    r = '{"jsonrpc": "2.0","method": "SportsAPING/v1.0/listMarketBook","params": {"marketIds": [' + marketId + '],"priceProjection": {"priceData": ["EX_BEST_OFFERS", "EX_TRADED"],"virtualise": "true"}},"id": 1}'
+    Ids = str([str(a) for a in marketId])
+    Ids = Ids.replace('[','')
+    Ids = Ids.replace(']','')
+    Ids = Ids.replace('\'','\"')
+    r = '{"jsonrpc": "2.0","method": "SportsAPING/v1.0/listMarketBook","params": {"marketIds": [' + Ids + '],"priceProjection": {"priceData": ["EX_BEST_OFFERS", "EX_TRADED"],"virtualise": "true"}},"id": 1}'
     json_dat = apiCall(r,urlExchange)
     result = json_dat['result']
     return result
@@ -122,8 +134,10 @@ def printOdds(odds_data,market_data):
 
 
 def getMarketID(marketResults):
+    IDs = []
     for market in marketResults:
-        return market['marketId']
+        IDs.append(market['marketId'])
+    return IDs
 
 def getRunnerIDs(marketResults):
     IDs = []
@@ -150,8 +164,8 @@ def start():
     eventTypeData = getEventTypeData()
     competitionData = ""
     eventData = ""
-    oddsTypes = ["Odds"]
-    oddsDict = {"Odds" : "MATCH_ODDS"}
+    oddsTypes = ["Odds","Over/Under"]
+    oddsDict = {"Odds":"MATCH_ODDS", "Over/Under":"OVER_UNDER_15\",\"OVER_UNDER_25"}
     while choose != 0:
         choose = int(input("Do you want watch 1) event types, 2) competitions 3) events 4) odds 0) quit\n"))
         if choose == 1:
@@ -178,15 +192,16 @@ def start():
             eventName = input("Please, give a event name\n")
             # get Event id
             eventId = getEventId(eventName,eventData)
-            print(eventId)
             print("Choose which odds to look at:")
             for a in oddsTypes:
-                print(a + "\n")
+                print(a)
             oddsType = input()
-            print(oddsDict[oddsType])
+            # market Data for the event
             marketData = getMarketData(eventId, oddsDict[oddsType])
             marketId = getMarketID(marketData)
             odds_dat = getOddsData(marketId)
+            print("Odds for the event")
+            matchPrinter(eventData,eventId)
             printOdds(odds_dat, marketData)
             
 start()
